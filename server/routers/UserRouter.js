@@ -3,7 +3,8 @@ const User = require("../models/UserModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// Registering an user
+
+// Registering an user and ......... sending a JWT token
 router.post("/", async (req, res) => {
   try {
     const { email, pass, passVerify } = req.body;
@@ -20,6 +21,7 @@ router.post("/", async (req, res) => {
         errorMessage: "Please enter the same password twice",
       });
 
+    
     const existingUser = await User.findOne({ email });
     // console.log(existingUser);
     if (existingUser)
@@ -52,7 +54,7 @@ router.post("/", async (req, res) => {
 
     // Send the token in a HTTP only cookie
     res
-      .cookie("tokenTest", token, {
+      .cookie("token", token, {
         httpOnly: true,
       })
       .send();
@@ -62,7 +64,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Log in the user
+
+
+////// Log in the user
 router.post("/login", async (req, res) => {
   try {
     const { email, pass } = req.body;
@@ -70,7 +74,7 @@ router.post("/login", async (req, res) => {
     // Validattion
     if (!email || !pass)
       return res.status(400).json({
-        errorMessage: "Please enter all requireddddddddddddddddd fields",
+        errorMessage: "Please enter all required fields",
       });
 
     // Getting the user account for the entered email
@@ -94,6 +98,8 @@ router.post("/login", async (req, res) => {
         .status(401)
         .json({ errorMessage: "Wrong Email or password!!" });
 
+
+    // If the entered password is correct...........
     // Generating a token using the document ID of mongoDB and the given secret key
     const token = jwt.sign(
       {
@@ -104,7 +110,7 @@ router.post("/login", async (req, res) => {
 
     // Send the token in a HTTP only cookie
     res
-      .cookie("tokenTest", token, {
+      .cookie("token", token, {
         httpOnly: true,
       })
       .send();
@@ -114,7 +120,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Logout the user
+///////// Logout the user by clearing the cookie and setting the expired date to a very old date
 router.get("/logout", (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
@@ -122,5 +128,23 @@ router.get("/logout", (req, res) => {
   }) .send();
   
 });
+
+////////// Checking whether the user is logged in or not
+router.get("/loggedIn", (req,res) => {
+  try { 
+    const token = req.cookies.token;
+    // console.log(token);
+     
+    if (!token) return res.json(false);
+
+    // Decoding the JWT token and verifying it
+    jwt.verify(token, process.env.JWT_SECRET);
+    res.send(true);
+
+  } catch (err) {    
+    res.json(false);
+  }
+});
+
 
 module.exports = router;
